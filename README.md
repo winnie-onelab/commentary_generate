@@ -4,6 +4,10 @@
 
 # How to use
 ```bash
+# 1. add .env under the project
+
+# 2. run the code
+#    can use multiple group types, for example --type CR RC_YC
 python commentary.py --type <group type>
 ```
 
