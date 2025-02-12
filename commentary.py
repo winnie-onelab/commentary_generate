@@ -21,47 +21,63 @@ language_mapping = {'SB': "射門被阻擋次數",
                 "shot": "射門次數"
                 }
 
+load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
 os.environ["OPENAI_API_KEY"] = api_key
 client = OpenAI()
 
 SHG_rule = [
-    "主客隊的射正次數相同",
-    "主隊的射正次數比客隊多2次以下",
-    "主隊的射正次數比客隊多3~5次",
-    "主隊的射正次數比客隊多6次以上",
-    "客隊的射正次數比主隊多2次以下",
-    "客隊的射正次數比主隊多3~5次",
-    "客隊的射正次數比主隊多6次以上",
-]
+        "主客隊的射正次數都是0",
+        "主客隊的射正次數相同",
+        "主隊的射正次數比客隊多2次以下",
+        "主隊的射正次數比客隊多3~5次",
+        "主隊的射正次數比客隊多6次以上",
+        "客隊的射正次數比主隊多2次以下",
+        "客隊的射正次數比主隊多3~5次",
+        "客隊的射正次數比主隊多6次以上",
+    ]
 
 SHB_rule = [
-    "主客隊的射偏次數相同",
-    "主隊的射偏次數比客隊多2次以下",
-    "主隊的射偏次數比客隊多3~5次",
-    "主隊的射偏次數比客隊多6次以上",
-    "客隊的射偏次數比主隊多2次以下",
-    "客隊的射偏次數比主隊多3~5次",
-    "客隊的射偏次數比主隊多6次以上",
-]
+        "主客隊的射偏次數都是0",
+        "主客隊的射偏次數相同",
+        "主隊的射偏次數比客隊多2次以下",
+        "主隊的射偏次數比客隊多3~5次",
+        "主隊的射偏次數比客隊多6次以上",
+        "客隊的射偏次數比主隊多2次以下",
+        "客隊的射偏次數比主隊多3~5次",
+        "客隊的射偏次數比主隊多6次以上",
+    ]
 
 SHW_rule = [
-    "主客隊的射中球框次數相同",
-    "主隊的射中球框次數比客隊多2次以下",
-    "主隊的射中球框次數比客隊多3次以上",
-    "客隊的射中球框次數比主隊多2次以下",
-    "客隊的射中球框次數比主隊多3次以上",
-]
+        "主客隊的射中球框次數都是0",
+        "主客隊的射中球框次數相同",
+        "主隊的射中球框次數比客隊多2次以下",
+        "主隊的射中球框次數比客隊多3次以上",
+        "客隊的射中球框次數比主隊多2次以下",
+        "客隊的射中球框次數比主隊多3次以上",
+    ]
+
+SB_rule = [
+        "主客隊的射門被阻擋次數都是0",
+        "主客隊的射門被阻擋次數相同",
+        "主隊的射門被阻擋次數比客隊多2次以下",
+        "主隊的射門被阻擋次數比客隊多3~5次",
+        "主隊的射門被阻擋次數比客隊多6次以上",
+        "客隊的射門被阻擋次數比主隊多2次以下",
+        "客隊的射門被阻擋次數比主隊多3~5次",
+        "主隊的射門被阻擋次數比客隊多6次以上"
+    ]
 
 shot_rule = [
-    "主客隊的射門次數相同",
-    "主隊的射門次數比客隊多2次以下",
-    "主隊的射門次數比客隊多3~5次",
-    "主隊的射門次數比客隊多6次以上",
-    "客隊的射門次數比主隊多2次以下",
-    "客隊的射門次數比主隊多3~5次",
-    "客隊的射門次數比主隊多6次以上",
-]
+        "主客隊的射門次數都是0",
+        "主客隊的射門次數相同",
+        "主隊的射門次數比客隊多2次以下",
+        "主隊的射門次數比客隊多3~5次",
+        "主隊的射門次數比客隊多6次以上",
+        "客隊的射門次數比主隊多2次以下",
+        "客隊的射門次數比主隊多3~5次",
+        "客隊的射門次數比主隊多6次以上",
+    ]
 
 def translate_event(event_text):
     """使用 OpenAI API 翻譯足球事件"""
@@ -78,7 +94,7 @@ def get_SUB_content():
     contents = []
 
     for (sub1, sub2) in itertools.product(range(7), repeat=2):
-        content = f"主客隊的換人次數是{sub1}比{sub2}，主隊和客隊分別用#T主隊和#TB來代替"
+        content = f"主客隊的換人次數是{sub1}比{sub2}"
         contents.append(content)
     
     return contents
@@ -86,18 +102,8 @@ def get_SUB_content():
 def get_SB_content():
     contents = []
 
-    sb_rules = [
-        "主客隊的射門被阻擋次數相同",
-        "主隊的射門被阻擋次數比客隊多2次以下",
-        "主隊的射門被阻擋次數比客隊多3~5次",
-        "主隊的射門被阻擋次數比客隊多6次以上",
-        "客隊的射門被阻擋次數比主隊多2次以下",
-        "客隊的射門被阻擋次數比主隊多3~5次",
-        "主隊的射門被阻擋次數比客隊多6次以上"
-    ]
-
-    for rule in sb_rules:
-        content = f"{rule}，需要提及兩隊的射門被阻擋次數，用#SB1和#SB2來代替，主隊和客隊分別用#TA主隊和#TB來代替"
+    for rule in SB_rule:
+        content = f"{rule}，需要提及兩隊的射門被阻擋次數，用#SB1和#SB2來代替，主隊和客隊分別用#TA和#TB來代替"
         contents.append(content)
     
     return contents
@@ -133,6 +139,7 @@ def get_SCORE_attack_content():
     contents = []
 
     score_rule = [
+        "主客隊的分數都是0",
         "主客隊的分數相同",
         "主隊的分數比客隊多1分",
         "主隊的分數比客隊多2分",
@@ -143,6 +150,7 @@ def get_SCORE_attack_content():
     ]
 
     attack_rule = [
+        "主客隊的攻擊次數都是0，需要提及兩隊的攻擊次數，用#attack1和#attack2來代替",
         "主客隊的攻擊次數相同，需要提及兩隊的攻擊次數，用#attack1和#attack2來代替",
         "主隊的攻擊次數比客隊多10次以內，需要提及兩隊的攻擊次數，用#attack1和#attack2來代替",
         "客隊的攻擊次數比主隊多10次以內，需要提及兩隊的攻擊次數，用#attack1和#attack2來代替",
@@ -166,6 +174,7 @@ def get_OFF_attack_content():
     contents = []
 
     OFF_rule = [
+        "主客隊的越位次數都是0",
         "主客隊的越位次數相同",
         "主隊的越位次數比客隊多2次以內",
         "主隊的越位次數比客隊多3次以上",
@@ -174,6 +183,7 @@ def get_OFF_attack_content():
     ]
 
     attack_rule = [
+        "主客隊的攻擊次數都是0，需要提及兩隊的攻擊次數，用#attack1和#attack2來代替",
         "主客隊的攻擊次數相同，需要提及兩隊的攻擊次數，用#attack1和#attack2來代替",
         "主隊的攻擊次數比客隊多10次以內，需要提及兩隊的攻擊次數，用#attack1和#attack2來代替",
         "客隊的攻擊次數比主隊多10次以內，需要提及兩隊的攻擊次數，用#attack1和#attack2來代替",
@@ -186,7 +196,7 @@ def get_OFF_attack_content():
 
     for (o_rule, a_rule) in itertools.product(OFF_rule, attack_rule):
         content = (
-            f"{o_rule}，需要提及兩隊的越位次數，用#OFF1和#OFF2來代替，"
+            f"{o_rule}，需要提及兩隊的越位次數，用#OFF1和#OFF2來代替，如果次數相同可以用其中一個表示就好，"
             f"{a_rule}，如果次數相同可以用其中一個表示就好，主隊和客隊分別用#TA和#TB來代替"
         )
         contents.append(content)
@@ -197,6 +207,7 @@ def get_SCORE_PEN_content():
     contents = []
 
     score_rule = [
+        "主客隊的分數都是0",
         "主客隊的分數相同",
         "主隊的分數比客隊多1分",
         "主隊的分數比客隊多2分",
@@ -256,6 +267,19 @@ def get_SHW_shot_content():
     
     return contents
 
+def get_SB_shot_content():
+    contents = []
+
+    for (sb_rule, s_rule) in itertools.product(SB_rule, shot_rule):
+        content = (
+            f"{sb_rule}，需要提及兩隊的射門被阻擋次數，用#SB1和#SB2來代替，"
+            f"{s_rule}，需要提及兩隊的射門次數，用#shot1和#shot2來代替，"
+            "如果次數相同可以用其中一個表示就好，主隊和客隊分別用#TA和#TB來代替"
+        )
+        contents.append(content)
+    
+    return contents
+
 def get_SHG_SHB_SHW_content():
     contents = []
 
@@ -270,6 +294,29 @@ def get_SHG_SHB_SHW_content():
     
     return contents
 
+def get_CR_content():
+    contents = []
+
+    cr_rule = [
+        "主客隊的角球次數都是0",
+        "主隊的角球次數是0，客隊的角球次數大於0",
+        "客隊的角球次數是0，主隊的角球次數大於0",
+        "主客隊的角球次數相同",
+        "主隊的角球次數比客隊多3次以內",
+        "主隊的角球次數比客隊多4次以上",
+        "客隊的角球次數比主隊多3次以內",
+        "客隊的角球次數比主隊多4次以上"
+    ]
+
+
+    for rule in cr_rule:
+        content = (
+            f"{rule}，需要提及兩隊的角球次數，分別用#CR1和#CR2代替，"
+            "如果次數相同可以用其中一個表示就好，主隊和客隊分別用#TA和#TB來代替"
+        )
+        contents.append(content)
+    
+    return contents
 
 
 def get_commentary(contents):
@@ -297,16 +344,26 @@ def save_to_csv(comms, contents, filename):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--type", 
-                        default=["RC_YC"], 
+                        default=["CR"], 
                         nargs="+",
-                        choices=["RC_YC", "SUB", "SB", "SCORE_attack", "OFF_attack", "SCORE_PEN", 
-                                 "SHG_shot", "SHB_shot", "SHW_shot", "SHG_SHB_SHW"],
+                        choices=["all", "CR", "RC_YC", "SUB", "SB", "SCORE_attack", "OFF_attack", "SCORE_PEN", 
+                                 "SHG_shot", "SHB_shot", "SHW_shot", "SB_shot", "SHG_SHB_SHW"],
                         help="The type of commentary you want to generate, for example, --type RC_YC SUB SB"
                                 )
     args = parser.parse_args()
 
+    if args.type == ["all"]:
+        args.type = ["CR", "RC_YC", "SUB", "SB", "SCORE_attack", "OFF_attack", "SCORE_PEN", 
+                     "SHG_shot", "SHB_shot", "SHW_shot", "SB_shot", "SHG_SHB_SHW"]
+
     for type in args.type:
-        if type == "RC_YC":
+        if type == "CR":
+            CR_content = get_CR_content()
+            cr_commentary = get_commentary(CR_content)
+            save_to_csv(cr_commentary, CR_content, "./commentary/CR.csv")
+            print("CR done")
+
+        elif type == "RC_YC":
             RC_YC_content = get_RC_YC_content()
             RC_YC_commentary = get_commentary(RC_YC_content)
             save_to_csv(RC_YC_commentary, RC_YC_content, "./commentary/RC_YC.csv")
@@ -359,6 +416,12 @@ if __name__ == "__main__":
             SHW_shot_commentary = get_commentary(SHW_shot_content)
             save_to_csv(SHW_shot_commentary, SHW_shot_content, "./commentary/SHW_shot.csv")
             print("SHW_shot done")  
+
+        elif type == "SB_shot":
+            SB_shot_content = get_SB_shot_content()
+            SB_shot_commentary = get_commentary(SB_shot_content)
+            save_to_csv(SB_shot_commentary, SB_shot_content, "./commentary/SB_shot.csv")
+            print("SB_shot done")
 
         elif type == "SHG_SHB_SHW":
             SHG_SHB_SHW_content = get_SHG_SHB_SHW_content()
