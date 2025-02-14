@@ -26,6 +26,11 @@ api_key = os.getenv("OPENAI_API_KEY")
 os.environ["OPENAI_API_KEY"] = api_key
 client = OpenAI()
 
+system_content_list = [
+    "你是一名專業的足球主播，僅依據我提供的統計數據播報足球比賽現場主隊與客隊的情況。請直接描述場上動態和相關統計，只使用第三人稱描述，不進行自我介紹、不與觀眾互動，也不要加入主觀期待或臆測。請完全使用繁體中文。",
+    "你是一名專業的足球主播，僅依據我提供的主客隊統計數據來進行簡單的統計數據播報。請直接描述場上的統計數據，並非常簡潔的描述兩隊的差距，不要描述戰況，只使用第三人稱描述，不進行自我介紹、不與觀眾互動，也不要加入主觀期待或臆測。請完全使用繁體中文。"
+    ] 
+
 SHG_rule = [
         "主客隊的射正次數都是0",
         "主客隊的射正次數相同",
@@ -68,6 +73,28 @@ SB_rule = [
         "主隊的射門被阻擋次數比客隊多6次以上"
     ]
 
+shg_rule = [
+        "主客隊射進球門的次數都是0",
+        "主客隊射進球門的次數相同",
+        "主隊射進球門的次數比客隊多2次以下",
+        "主隊射進球門的次數比客隊多3~5次",
+        "主隊射進球門的次數比客隊多6次以上",
+        "客隊射進球門的次數比主隊多2次以下",
+        "客隊射進球門的次數比主隊多3~5次",
+        "客隊射進球門的次數比主隊多6次以上",
+    ]
+
+shb_rule = [
+        "主客隊射出球門的次數都是0",
+        "主客隊射出球門的次數相同",
+        "主隊射出球門的次數比客隊多2次以下",
+        "主隊射出球門的次數比客隊多3~5次",
+        "主隊射出球門的次數比客隊多6次以上",
+        "客隊射出球門的次數比主隊多2次以下",
+        "客隊射出球門的次數比主隊多3~5次",
+        "客隊射出球門的次數比主隊多6次以上",
+    ]
+
 shot_rule = [
         "主客隊的射門次數都是0",
         "主客隊的射門次數相同",
@@ -78,17 +105,6 @@ shot_rule = [
         "客隊的射門次數比主隊多3~5次",
         "客隊的射門次數比主隊多6次以上",
     ]
-
-def translate_event(event_text):
-    """使用 OpenAI API 翻譯足球事件"""
-    result = client.chat.completions.create(
-        model="gpt-4o",  # 或 gpt-3.5-turbo
-        messages=[
-            {"role": "system", "content": "你是一名專業的足球主播，僅依據我提供的統計數據播報足球比賽現場主隊與客隊的情況。請直接描述場上動態和相關統計，只使用第三人稱描述，不進行自我介紹、不與觀眾互動，也不要加入主觀期待或臆測。請完全使用繁體中文。"},
-            {"role": "user", "content": event_text}
-        ]
-    )
-    return result.to_dict()['choices'][0]['message']['content']
 
 def get_SUB_content():
     contents = []
@@ -103,7 +119,7 @@ def get_SB_content():
     contents = []
 
     for rule in SB_rule:
-        content = f"{rule}，需要提及兩隊的射門被阻擋次數，用#SB1和#SB2來代替，主隊和客隊分別用#TA和#TB來代替"
+        content = f"{rule}，需要提及兩隊的射門被阻擋次數，用#SB1和#SB2來代替"
         contents.append(content)
     
     return contents
@@ -124,8 +140,7 @@ def get_RC_YC_content():
         content = (
             f"主客隊的紅卡次數是{rc1}比{rc2}，"
             f"{rule}，"
-            "需要提及兩隊的黃牌次數，用#YC1和#YC2來代替，"
-            "主隊和客隊分別用#TA和#TB來代替"
+            "需要提及兩隊的黃牌次數，用#YC1和#YC2來代替"
         )
         contents.append(content)
     
@@ -160,7 +175,7 @@ def get_SCORE_attack_content():
     for (s_rule, a_rule) in itertools.product(score_rule, attack_rule):
         content = (
             f"{s_rule}，需要提及兩隊的分數，用#SCORE1和#SCORE2來代替，"
-            f"{a_rule}，如果次數相同可以用其中一個表示就好，主隊和客隊分別用#TA和#TB來代替"
+            f"{a_rule}，如果次數相同可以用其中一個表示就好"
         )
         contents.append(content)
     
@@ -193,7 +208,7 @@ def get_OFF_attack_content():
     for (o_rule, a_rule) in itertools.product(OFF_rule, attack_rule):
         content = (
             f"{o_rule}，需要提及兩隊的越位次數，用#OFF1和#OFF2來代替，如果次數相同可以用其中一個表示就好，"
-            f"{a_rule}，如果次數相同可以用其中一個表示就好，主隊和客隊分別用#TA和#TB來代替"
+            f"{a_rule}，如果次數相同可以用其中一個表示就好"
         )
         contents.append(content)
     
@@ -217,8 +232,7 @@ def get_SCORE_PEN_content():
         content = (
             f"{s_rule}，需要提及兩隊的分數，用#SCORE1和#SCORE2來代替，"
             f"主客隊的罰球次數是{pen1}比{pen2}，"
-            "需要提及兩隊的罰球次數，用#PEN1和#PEN2來代替，"
-            "主隊和客隊分別用#TA和#TB來代替"
+            "需要提及兩隊的罰球次數，用#PEN1和#PEN2來代替"
         )
         contents.append(content)
     
@@ -231,7 +245,7 @@ def get_SHG_shot_content():
         content = (
             f"{shg_rule}，需要提及兩隊的射正次數，用#SHG1和#SHG2來代替，"
             f"{s_rule}，需要提及兩隊的射門次數，用#shot1和#shot2來代替，"
-            "如果次數相同可以用其中一個表示就好，主隊和客隊分別用#TA和#TB來代替"
+            "如果次數相同可以用其中一個表示就好"
         )
         contents.append(content)
     
@@ -244,7 +258,7 @@ def get_SHB_shot_content():
         content = (
             f"{shb_rule}，需要提及兩隊的射偏次數，用#SHB1和#SHB2來代替，"
             f"{s_rule}，需要提及兩隊的射門次數，用#shot1和#shot2來代替，"
-            "如果次數相同可以用其中一個表示就好，主隊和客隊分別用#TA和#TB來代替"
+            "如果次數相同可以用其中一個表示就好"
         )
         contents.append(content)
     
@@ -255,9 +269,35 @@ def get_SHW_shot_content():
 
     for (shw_rule, s_rule) in itertools.product(SHW_rule, shot_rule):
         content = (
-            f"{shw_rule}，需要提及兩隊的射中球框次數，用#SHG1和#SHG2來代替，"
+            f"{shw_rule}，需要提及兩隊的射中球框次數，用#SHW1和#SHW2來代替，"
             f"{s_rule}，需要提及兩隊的射門次數，用#shot1和#shot2來代替，"
-            "如果次數相同可以用其中一個表示就好，主隊和客隊分別用#TA和#TB來代替"
+            "如果次數相同可以用其中一個表示就好"
+        )
+        contents.append(content)
+    
+    return contents
+
+def get_shg_shot_content():
+    contents = []
+
+    for (shg_r, s_rule) in itertools.product(shg_rule, shot_rule):
+        content = (
+            f"{shg_r}，需要提及兩隊射進球門的次數，用#shg1和#shg2來代替，兩隊的差距可以用#shg_diff來代替，"
+            f"{s_rule}，需要提及兩隊的射門次數，用#shot1和#shot2來代替，"
+            "如果次數相同可以用其中一個表示就好，另外，射進球門的次數不是射正的次數，請不要使用“射正”這個詞"
+        )
+        contents.append(content)
+    
+    return contents
+
+def get_shb_shot_content():
+    contents = []
+
+    for (shb_r, s_rule) in itertools.product(shb_rule, shot_rule):
+        content = (
+            f"{shb_r}，需要提及兩隊射出球門的次數，用#shb1和#shb2來代替，兩隊的差距可以用#shb_diff來代替，"
+            f"{s_rule}，需要提及兩隊的射門次數，用#shot1和#shot2來代替，"
+            "如果次數相同可以用其中一個表示就好，另外，射出球門的次數不是射偏的次數，請不要使用“射偏”這個詞"
         )
         contents.append(content)
     
@@ -270,7 +310,7 @@ def get_SB_shot_content():
         content = (
             f"{sb_rule}，需要提及兩隊的射門被阻擋次數，用#SB1和#SB2來代替，"
             f"{s_rule}，需要提及兩隊的射門次數，用#shot1和#shot2來代替，"
-            "如果次數相同可以用其中一個表示就好，主隊和客隊分別用#TA和#TB來代替"
+            "如果次數相同可以用其中一個表示就好"
         )
         contents.append(content)
     
@@ -284,7 +324,7 @@ def get_SHG_SHB_SHW_content():
             f"{shg_rule}，需要提及兩隊的射正次數，用#SHG1和#SHG2來代替，"
             f"{shb_rule}，需要提及兩隊的射偏次數，用#SHB1和#SHB2來代替，"
             f"{shw_rule}，需要提及兩隊的射中球框次數，用#SHG1和#SHG2來代替，"
-            "如果次數相同可以用其中一個表示就好，主隊和客隊分別用#TA和#TB來代替"
+            "如果次數相同可以用其中一個表示就好"
         )
         contents.append(content)
     
@@ -308,17 +348,31 @@ def get_CR_content():
     for rule in cr_rule:
         content = (
             f"{rule}，需要提及兩隊的角球次數，分別用#CR1和#CR2代替，"
-            "如果次數相同可以用其中一個表示就好，主隊和客隊分別用#TA和#TB來代替"
+            "如果次數相同可以用其中一個表示就好"
         )
         contents.append(content)
     
     return contents
 
+def translate_event(system_content_id, event_text):
+    """使用 OpenAI API 翻譯足球事件"""
+    system_content = system_content_list[system_content_id]
+    result = client.chat.completions.create(
+        model="gpt-4o",  # 或 gpt-3.5-turbo
+        messages=[
+            {"role": "system", "content": system_content},
+            {"role": "user", "content": event_text}
+        ]
+    )
+    return result.to_dict()['choices'][0]['message']['content']
 
-def get_commentary(contents):
+
+def get_commentary(system_content_id, contents):
     commentary = []
     for c in contents:
-        commentary.append(translate_event(c))
+        comm = translate_event(system_content_id, c)
+        print(comm)
+        commentary.append(comm)
 
     return commentary
 
@@ -343,87 +397,106 @@ if __name__ == "__main__":
                         default=["CR"], 
                         nargs="+",
                         choices=["all", "CR", "RC_YC", "SUB", "SB", "SCORE_attack", "OFF_attack", "SCORE_PEN", 
-                                 "SHG_shot", "SHB_shot", "SHW_shot", "SB_shot", "SHG_SHB_SHW"],
+                                 "SHG_shot", "SHB_shot", "SHW_shot", "SB_shot", "SHG_SHB_SHW", "shg_shot", "shb_shot"],
                         help="The type of commentary you want to generate, for example, --type RC_YC SUB SB"
                                 )
     args = parser.parse_args()
 
     if args.type == ["all"]:
         args.type = ["CR", "RC_YC", "SUB", "SB", "SCORE_attack", "OFF_attack", "SCORE_PEN", 
-                     "SHG_shot", "SHB_shot", "SHW_shot", "SB_shot", "SHG_SHB_SHW"]
+                     "SHG_shot", "SHB_shot", "SHW_shot", "SB_shot", "SHG_SHB_SHW", "shg_shot", "shb_shot"]
 
     for type in args.type:
+
+        if type in ["RC_YC", "SHG_shot", "SHB_shot", "SHW_shot", "SB_shot", "SHG_SHB_SHW", "shg_shot", "shb_shot"]:
+            system_content_id = 1
+        else:
+            system_content_id = 0
+
         if type == "CR":
             CR_content = get_CR_content()
-            cr_commentary = get_commentary(CR_content)
+            cr_commentary = get_commentary(system_content_id, CR_content)
             save_to_csv(cr_commentary, CR_content, "./commentary/CR.csv")
             print("CR done")
 
         elif type == "RC_YC":
             RC_YC_content = get_RC_YC_content()
-            RC_YC_commentary = get_commentary(RC_YC_content)
+            RC_YC_commentary = get_commentary(system_content_id, RC_YC_content)
             save_to_csv(RC_YC_commentary, RC_YC_content, "./commentary/RC_YC.csv")
             print("RC_YC done")
 
         elif type == "SUB":
             SUB_content = get_SUB_content()
-            sub_commentary = get_commentary(SUB_content)
+            sub_commentary = get_commentary(system_content_id, SUB_content)
             save_to_csv(sub_commentary, SUB_content, "./commentary/SUB.csv")
             print("SUB done")
 
         elif type == "SB":
             SB_content = get_SB_content()
-            sub_commentary = get_commentary(SB_content)
+            sub_commentary = get_commentary(system_content_id, SB_content)
             save_to_csv(sub_commentary, SB_content, "./commentary/SB.csv")
             print("SB done")
 
         elif type == "SCORE_attack":
             SCORE_attack_content = get_SCORE_attack_content()
-            SCORE_attack_commentary = get_commentary(SCORE_attack_content)
+            SCORE_attack_commentary = get_commentary(system_content_id, SCORE_attack_content)
             save_to_csv(SCORE_attack_commentary, SCORE_attack_content, "./commentary/SCORE_attack.csv")
             print("SCORE_attack done")
 
         elif type == "OFF_attack":
             OFF_attack_content = get_OFF_attack_content()
-            OFF_attack_commentary = get_commentary(OFF_attack_content)
+            OFF_attack_commentary = get_commentary(system_content_id, OFF_attack_content)
             save_to_csv(OFF_attack_commentary, OFF_attack_content, "./commentary/OFF_attack.csv")
             print("OFF_attack done")
 
         elif type == "SCORE_PEN":
             SCORE_PEN_content = get_SCORE_PEN_content()
-            SCORE_PEN_commentary = get_commentary(SCORE_PEN_content)
+            SCORE_PEN_commentary = get_commentary(system_content_id, SCORE_PEN_content)
             save_to_csv(SCORE_PEN_commentary, SCORE_PEN_content, "./commentary/SCORE_PEN.csv")
             print("SCORE_PEN done")
 
         elif type == "SHG_shot":
+            system_content_id = 1
             SHG_shot_content = get_SHG_shot_content()
-            SHG_shot_commentary = get_commentary(SHG_shot_content)
+            SHG_shot_commentary = get_commentary(system_content_id, SHG_shot_content)
             save_to_csv(SHG_shot_commentary, SHG_shot_content, "./commentary/SHG_shot.csv")
             print("SHG_shot done")
 
         elif type == "SHB_shot":
             SHB_shot_content = get_SHB_shot_content()
-            SHB_shot_commentary = get_commentary(SHB_shot_content)
+            SHB_shot_commentary = get_commentary(system_content_id, SHB_shot_content)
             save_to_csv(SHB_shot_commentary, SHB_shot_content, "./commentary/SHB_shot.csv")
             print("SHB_shot done")
 
         elif type == "SHW_shot":
             SHW_shot_content = get_SHW_shot_content()
-            SHW_shot_commentary = get_commentary(SHW_shot_content)
+            SHW_shot_commentary = get_commentary(system_content_id, SHW_shot_content)
             save_to_csv(SHW_shot_commentary, SHW_shot_content, "./commentary/SHW_shot.csv")
             print("SHW_shot done")  
 
         elif type == "SB_shot":
             SB_shot_content = get_SB_shot_content()
-            SB_shot_commentary = get_commentary(SB_shot_content)
+            SB_shot_commentary = get_commentary(system_content_id, SB_shot_content)
             save_to_csv(SB_shot_commentary, SB_shot_content, "./commentary/SB_shot.csv")
             print("SB_shot done")
 
         elif type == "SHG_SHB_SHW":
             SHG_SHB_SHW_content = get_SHG_SHB_SHW_content()
-            SHG_SHB_SHW_commentary = get_commentary(SHG_SHB_SHW_content)
+            SHG_SHB_SHW_commentary = get_commentary(system_content_id, SHG_SHB_SHW_content)
             save_to_csv(SHG_SHB_SHW_commentary, SHG_SHB_SHW_content, "./commentary/SHG_SHB_SHW.csv")
             print("SHG_SHB_SHW done")
+
+        elif type == "shg_shot":
+            shg_shot_content = get_shg_shot_content()
+            shg_shot_commentary = get_commentary(system_content_id, shg_shot_content)
+            save_to_csv(shg_shot_commentary, shg_shot_content, "./commentary/goal_shg_shot.csv")
+            print("shg_shot done")
+
+        elif type == "shb_shot":
+            shb_shot_content = get_shb_shot_content()
+            shb_shot_commentary = get_commentary(system_content_id, shb_shot_content)
+            save_to_csv(shb_shot_commentary, shb_shot_content, "./commentary/shb_shw_shot.csv")
+            print("shb_shot done")
 
 
     
